@@ -2,6 +2,8 @@
 const exp=require("express")
 const userApi=exp.Router()
 const expressErrorHandler = require("express-async-handler")
+const bcryptjs = require("bcryptjs")
+const jwt = require("jsonwebtoken")
 
 //add body parsing middle ware
 userApi.use(exp.json())
@@ -63,6 +65,11 @@ userApi.post("/createuser", expressErrorHandler( async (req,res,next)=>{
     let userObj = await userCollectionObj.findOne({username:newUser.username})
     //if user not existed create new user
     if(userObj==null){
+        //hash password
+        let hashedpassword = await bcryptjs.hash(newUser.password,7);
+        //replace password
+        newUser.password = hashedpassword
+        //insert user
         userCollectionObj.insertOne(newUser)
         console.log("User added successfully")
         res.send({message:"User added successfully"})
@@ -101,12 +108,35 @@ userApi.delete('/deleteuser/:username', expressErrorHandler( async (req,res)=>{
     res.send({message:"User Deleted"})
 }))
 
+// http://localhost:3000/user/login
+userApi.post('/login', expressErrorHandler ( async (req,res) =>{
 
+    //get usercredentials
+    let credentials = req.body;
 
-//sample route
-userApi.get('/getusers',(req,res)=>{
-    res.send({message:"response from userApi"})
-})
+    //search for user
+    let userObj = await userCollectionObj.findOne({username:credentials.username})
+    //if user not found
+    if(userObj == null){
+        res.send({message:'Invalid Username'})
+    }
+    //if user existed
+    else{
+        //compare the password
+        let result = await bcryptjs.compare(credentials.password ,userObj.password)
+        //if no match
+        if(result==false){
+            res.send({message:'Inavlid Password'})
+        }
+        else{
+            //create a token 
+            let signedToken = jwt.sign({username:credentials.username},'abcdef',{expiresIn:120})
+            //send token to client
+            res.send({message:'login success',token: signedToken , username:credentials.username})
+        }
+    }
+
+}))
 
 //export this api
 module.exports=userApi;
