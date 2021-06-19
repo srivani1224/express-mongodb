@@ -103,8 +103,6 @@ userApi.delete('/deleteuser/:username', expressErrorHandler( async (req,res)=>{
 
 
 
-
-
 //sample route
 userApi.get('/getusers',(req,res)=>{
     res.send({message:"response from userApi"})
