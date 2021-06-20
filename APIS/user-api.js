@@ -25,10 +25,9 @@ mc.connect(databaseUrl,{useNewUrlParser:true,useUnifiedTopology:true},(err,clien
         let databaseObj=client.db("sridb")
         //create usercollection obj
         userCollectionObj=databaseObj.collection("usercollection");
-        console.log("connected to database")
+        console.log("connected to database userApi")
     }
 })
-
 
 //http://localhost:3000/user/getusers
 userApi.get("/getusers", expressErrorHandler( async (req,res)=>{
@@ -38,7 +37,6 @@ userApi.get("/getusers", expressErrorHandler( async (req,res)=>{
     res.send({message:usersList})
 
 }))
-
 
 //http://localhost:3000/user/getuser/<username>
 userApi.get("/getuser/:username", expressErrorHandler( async (req,res)=>{
@@ -88,7 +86,11 @@ userApi.put("/updateuser/:username", expressErrorHandler( async (req,res)=>{
     //get new user
     let newUser = req.body;
 
-    //update
+    //hash password
+    let hashedpassword = await bcryptjs.hash(newUser.password,7);
+    //replace password
+    newUser.password = hashedpassword
+    //update user
     await userCollectionObj.updateMany({username:newUser.username},{$set:{...newUser}})
     console.log("User data updated")
     res.send({message:"User data updated"})
